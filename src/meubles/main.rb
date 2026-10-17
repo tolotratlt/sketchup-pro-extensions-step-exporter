@@ -56,8 +56,19 @@ module Meubles
 
   def self.menu_freecad_path
     current = ExportFreeCAD.freecad_cmd.to_s
-    path = UI.openpanel('FreeCADCmd.exe', File.dirname(current), 'FreeCADCmd|freecadcmd.exe||')
-    Sketchup.write_default(ExportFreeCAD::PREFS, 'freecadcmd', path) if path
+    path =
+      if ExportFreeCAD.mac?
+        # Le sélecteur de fichiers macOS n'entre pas dans les paquets .app : on saisit le chemin.
+        input = UI.inputbox(['Chemin de freecadcmd'],
+                            [current.empty? ? '/Applications/FreeCAD.app/Contents/Resources/bin/freecadcmd' : current],
+                            'FreeCADCmd')
+        input && input[0].strip
+      else
+        UI.openpanel('FreeCADCmd.exe', File.dirname(current), 'FreeCADCmd|freecadcmd.exe||')
+      end
+    return unless path && !path.empty?
+    return UI.messagebox("Fichier introuvable :\n#{path}") unless File.file?(path)
+    Sketchup.write_default(ExportFreeCAD::PREFS, 'freecadcmd', path)
   end
 
   unless file_loaded?('meubles/main')

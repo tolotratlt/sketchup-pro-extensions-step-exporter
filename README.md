@@ -48,14 +48,25 @@ part (no nested group/component) →  solid (exact B-rep, not a mesh), named aft
 
 ### To use the extension (required)
 
+Supported platforms: **Windows** and **macOS**.
+
 | Software | Version | Provides | Notes |
 |---|---|---|---|
-| **SketchUp Pro** (Windows) | 2024 or later — tested 2026 (26.2) | **Ruby runtime** (bundled, Ruby 3.2 in SketchUp 2026) | Runs the extension (`.rb` files). Only Ruby standard library is used (`json`, `csv`, `open3`). |
-| **FreeCAD** (Windows) | 1.0 or later — tested 1.1.3 | **Python runtime** (bundled, Python 3.11 in FreeCAD 1.1) and the OpenCASCADE STEP writer | Only `freecadcmd.exe` (headless FreeCAD) is used: it runs `import_sketchup.py` with FreeCAD's own Python. |
+| **SketchUp Pro** | 2024 or later — tested 2026 (26.2) on Windows | **Ruby runtime** (bundled, Ruby 3.2 in SketchUp 2026) | Runs the extension (`.rb` files). Only Ruby standard library is used (`json`, `csv`, `open3`). |
+| **FreeCAD** | 1.0 or later — tested 1.1.3 on Windows | **Python runtime** (bundled, Python 3.11 in FreeCAD 1.1) and the OpenCASCADE STEP writer | Only `freecadcmd` (headless FreeCAD) is used: it runs `import_sketchup.py` with FreeCAD's own Python. |
 
 That's all. **No separate Ruby, Python or conda install, no gems, no pip packages and no FreeCAD add-on are needed** — both runtimes ship inside SketchUp and FreeCAD.
 
-The extension looks for `FreeCAD*\bin\freecadcmd.exe` in `Program Files` and `%LOCALAPPDATA%\Programs`; otherwise set it with *Chemin de FreeCADCmd...*. The CSV cut list and the buffet generator work without FreeCAD.
+Where the extension looks for `freecadcmd` (the most recent version found wins):
+
+| OS | Searched locations |
+|---|---|
+| Windows | `Program Files\FreeCAD*\bin\freecadcmd.exe`, `%LOCALAPPDATA%\Programs\FreeCAD*\bin\freecadcmd.exe` |
+| macOS | `/Applications/FreeCAD*.app/Contents/Resources/bin/freecadcmd` (or `Contents/MacOS/`), same under `~/Applications` |
+
+If FreeCAD is elsewhere, set the path with *Chemin de FreeCADCmd...* (on macOS you type/paste the path, because the file picker can't enter `.app` bundles). On macOS, **launch FreeCAD once** from the Finder before the first export so Gatekeeper approves it.
+
+The CSV cut list and the buffet generator work without FreeCAD.
 
 ### Optional — checking the STEP with build123d
 
@@ -66,32 +77,38 @@ The extension looks for `FreeCAD*\bin\freecadcmd.exe` in `Program Files` and `%L
 | Python | 3.12 |
 | build123d | 0.13.0 (pulls OCP / OpenCASCADE `cadquery-ocp-novtk` 8.0.1) |
 
-With conda:
-```powershell
+With conda (Windows or macOS):
+```bash
 conda env create -f environment.yml     # creates the "sketchup-step" env
 conda activate sketchup-step
 ```
 or with pip in any Python 3.10+ environment:
-```powershell
+```bash
 pip install -r tools/requirements.txt
 ```
 
 ## Installation
 
-### Option A — `.rbz` package (recommended)
+### Option A — `.rbz` package (recommended, same file for Windows and macOS)
 
 1. Build it (or download it from the GitHub Releases page):
    ```powershell
+   # Windows (PowerShell)
    .\build_rbz.ps1          # creates dist\meubles-<version>.rbz
+   ```
+   ```bash
+   # macOS (Terminal)
+   ./build_rbz.sh           # creates dist/meubles-<version>.rbz
    ```
 2. In SketchUp: **Extensions > Extension Manager > Install Extension**, pick the `.rbz`.
 
-### Option B — developer install
+### Option B — developer install (copies `src/` into the Plugins folder)
 
-```powershell
-.\install.ps1                # copies src\ into %APPDATA%\SketchUp\SketchUp 2026\SketchUp\Plugins
-.\install.ps1 -Version 2025  # other SketchUp version
-```
+| OS | Command | Plugins folder |
+|---|---|---|
+| Windows | `.\install.ps1` (or `.\install.ps1 -Version 2025`) | `%APPDATA%\SketchUp\SketchUp 2026\SketchUp\Plugins` |
+| macOS | `./install.sh` (or `./install.sh 2025`) | `~/Library/Application Support/SketchUp 2026/SketchUp/Plugins` |
+
 Restart SketchUp afterwards.
 
 ### "Unsigned" warning
@@ -110,8 +127,10 @@ The Extension Manager shows the extension as **Unsigned**: this is expected for 
 
 FreeCAD's STEP importer adds things that are **not in the file**: with default settings it renames duplicate labels (`Panneau001`) and adds an `Origin` object to every assembly. To see the exact structure, enable once:
 
-1. **Edit > Preferences > General > Document**: *Allow duplicate object labels in one document*.
-2. **Edit > Preferences > Import-Export > STEP**: *Use LinkGroup*.
+1. **Preferences > General > Document**: *Allow duplicate object labels in one document*.
+2. **Preferences > Import-Export > STEP**: *Use LinkGroup*.
+
+(Preferences are under **Edit > Preferences** on Windows, **FreeCAD > Settings / Preferences** on macOS.)
 
 ### build123d
 
@@ -122,15 +141,15 @@ model = import_step("model.step")
 The hierarchy and names are preserved, but note that build123d's `import_step` itself replaces spaces, dots and parentheses in labels with `_` (`Côté gauche` → `Côté_gauche`).
 
 To print the tree as build123d sees it:
-```powershell
-python tools\check_step_build123d.py model.step     # see "Optional — checking the STEP with build123d"
+```bash
+python tools/check_step_build123d.py model.step     # see "Optional — checking the STEP with build123d"
 ```
 
 ## Limitations
 
 - In the STEP, identical parts don't share geometry: each part is its own product so that readers display the **instance** name. Definition names (e.g. `Côté 850x450x18`) are kept in the CSV cut list.
 - Scaled instances are exported without their scale (STEP placements are rigid).
-- Windows only (path detection and `freecadcmd.exe`).
+- macOS support is implemented (FreeCAD detection, path dialog, `install.sh` / `build_rbz.sh`) but has only been tested on Windows so far.
 
 ## Project layout
 
@@ -141,6 +160,8 @@ src/meubles/export_freecad.rb  SketchUp → JSON (hierarchy + faces), runs freec
 src/meubles/import_sketchup.py JSON → STEP, executed by FreeCAD's Python
 src/meubles/nomenclature.rb CSV cut list
 src/meubles/buffet.rb       parametric buffet generator
+build_rbz.ps1 / build_rbz.sh   build dist/meubles-<version>.rbz (Windows / macOS)
+install.ps1 / install.sh       developer install into the Plugins folder (Windows / macOS)
 tools/check_step_build123d.py  print a STEP tree with build123d (optional)
 tools/requirements.txt      pip requirements of the optional tool
 environment.yml             conda env of the optional tool

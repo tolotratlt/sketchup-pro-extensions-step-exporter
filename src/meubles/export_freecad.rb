@@ -32,12 +32,27 @@ module Meubles
       { step: step, warnings: output.lines.grep(/ATTENTION/).map(&:strip) }
     end
 
+    def self.mac?
+      Sketchup.platform == :platform_osx
+    end
+
+    # Chemin enregistré (menu « Chemin de FreeCADCmd... »), sinon recherche dans les emplacements usuels :
+    #   Windows : Program Files / %LOCALAPPDATA%\Programs \ FreeCAD*\bin\freecadcmd.exe
+    #   macOS   : /Applications ou ~/Applications / FreeCAD*.app/Contents/{Resources/bin,MacOS}/freecadcmd
     def self.freecad_cmd
       saved = Sketchup.read_default(PREFS, 'freecadcmd')
-      return saved if saved && File.exist?(saved)
-      candidates = %w[ProgramFiles ProgramW6432 LOCALAPPDATA].filter_map { |v| ENV[v] }
-      candidates.flat_map { |dir| Dir.glob(File.join(dir.tr('\\', '/'), '{Programs/,}FreeCAD*/bin/{freecadcmd,FreeCADCmd}.exe')) }
-                .max # version la plus récente par ordre alphabétique
+      return saved if saved && File.file?(saved)
+      candidates =
+        if mac?
+          ['/Applications', File.join(Dir.home, 'Applications')].flat_map do |dir|
+            Dir.glob(File.join(dir, 'FreeCAD*.app/Contents/{Resources/bin,MacOS}/{freecadcmd,FreeCADCmd}'))
+          end
+        else
+          %w[ProgramFiles ProgramW6432 LOCALAPPDATA].filter_map { |v| ENV[v] }.flat_map do |dir|
+            Dir.glob(File.join(dir.tr('\\', '/'), '{Programs/,}FreeCAD*/bin/{freecadcmd,FreeCADCmd}.exe'))
+          end
+        end
+      candidates.select { |p| File.file?(p) }.max # version la plus récente par ordre alphabétique
     end
 
     def self.export(roots, path, model: Sketchup.active_model)
