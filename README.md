@@ -1,10 +1,10 @@
-# Meubles — SketchUp Pro extension
+# Meubles - SketchUp Pro extension
 
 **STEP export for SketchUp Pro that preserves the model hierarchy and object names.**
 
-SketchUp has no STEP exporter, and its other formats (OBJ, STL, DAE, FBX, IFC…) either flatten the model, turn it into meshes, or rename objects. This extension exports exact solids to STEP with the **hierarchy and names exactly as in the Outliner** — nothing is renamed, flattened or exploded.
+SketchUp has no STEP exporter, and its other formats (OBJ, STL, DAE, FBX, IFC…) either flatten the model, turn it into meshes, or rename objects. This extension exports exact solids to STEP with the **hierarchy and names exactly as in the Outliner** - nothing is renamed, flattened or exploded.
 
-Built for a SketchUp → STEP → [build123d](https://github.com/gumyr/build123d) workflow, with FreeCAD used as the converter and viewer.
+Built for a SketchUp → STEP →  FreeCAD workflow, with FreeCAD used as the converter and viewer.
 
 ### Scope
 
@@ -52,10 +52,10 @@ Supported platforms: **Windows** and **macOS**.
 
 | Software | Version | Provides | Notes |
 |---|---|---|---|
-| **SketchUp Pro** | 2024 or later — tested 2026 (26.2) on Windows | **Ruby runtime** (bundled, Ruby 3.2 in SketchUp 2026) | Runs the extension (`.rb` files). Only Ruby standard library is used (`json`, `csv`, `open3`). |
-| **FreeCAD** | 1.0 or later — tested 1.1.3 on Windows | **Python runtime** (bundled, Python 3.11 in FreeCAD 1.1) and the OpenCASCADE STEP writer | Only `freecadcmd` (headless FreeCAD) is used: it runs `import_sketchup.py` with FreeCAD's own Python. |
+| **SketchUp Pro** | 2024 or later - tested 2026 (26.2) on Windows | **Ruby runtime** (bundled, Ruby 3.2 in SketchUp 2026) | Runs the extension (`.rb` files). Only Ruby standard library is used (`json`, `csv`, `open3`). |
+| **FreeCAD** | 1.0 or later - tested 1.1.3 on Windows | **Python runtime** (bundled, Python 3.11 in FreeCAD 1.1) and the OpenCASCADE STEP writer | Only `freecadcmd` (headless FreeCAD) is used: it runs `import_sketchup.py` with FreeCAD's own Python. |
 
-That's all. **No separate Ruby, Python or conda install, no gems, no pip packages and no FreeCAD add-on are needed** — both runtimes ship inside SketchUp and FreeCAD.
+That's all. **No separate Ruby, Python or conda install, no gems, no pip packages and no FreeCAD add-on are needed** - both runtimes ship inside SketchUp and FreeCAD.
 
 Where the extension looks for `freecadcmd` (the most recent version found wins):
 
@@ -68,28 +68,9 @@ If FreeCAD is elsewhere, set the path with *Chemin de FreeCADCmd...* (on macOS y
 
 The CSV cut list and the buffet generator work without FreeCAD.
 
-### Optional — checking the STEP with build123d
-
-`tools/check_step_build123d.py` is a standalone helper, not part of the extension. It needs a regular Python with build123d:
-
-| Package | Version tested |
-|---|---|
-| Python | 3.12 |
-| build123d | 0.13.0 (pulls OCP / OpenCASCADE `cadquery-ocp-novtk` 8.0.1) |
-
-With conda (Windows or macOS):
-```bash
-conda env create -f environment.yml     # creates the "sketchup-step" env
-conda activate sketchup-step
-```
-or with pip in any Python 3.10+ environment:
-```bash
-pip install -r tools/requirements.txt
-```
-
 ## Installation
 
-### Option A — `.rbz` package (recommended, same file for Windows and macOS)
+### Option A - `.rbz` package (recommended, same file for Windows and macOS)
 
 1. Build it (or download it from the GitHub Releases page):
    ```powershell
@@ -102,7 +83,7 @@ pip install -r tools/requirements.txt
    ```
 2. In SketchUp: **Extensions > Extension Manager > Install Extension**, pick the `.rbz`.
 
-### Option B — developer install (copies `src/` into the Plugins folder)
+### Option B - developer install (copies `src/` into the Plugins folder)
 
 | OS | Command | Plugins folder |
 |---|---|---|
@@ -132,18 +113,6 @@ FreeCAD's STEP importer adds things that are **not in the file**: with default s
 
 (Preferences are under **Edit > Preferences** on Windows, **FreeCAD > Settings / Preferences** on macOS.)
 
-### build123d
-
-```python
-from build123d import import_step
-model = import_step("model.step")
-```
-The hierarchy and names are preserved, but note that build123d's `import_step` itself replaces spaces, dots and parentheses in labels with `_` (`Côté gauche` → `Côté_gauche`).
-
-To print the tree as build123d sees it:
-```bash
-python tools/check_step_build123d.py model.step     # see "Optional — checking the STEP with build123d"
-```
 
 ## Limitations
 
@@ -162,8 +131,6 @@ src/meubles/nomenclature.rb CSV cut list
 src/meubles/buffet.rb       parametric buffet generator
 build_rbz.ps1 / build_rbz.sh   build dist/meubles-<version>.rbz (Windows / macOS)
 install.ps1 / install.sh       developer install into the Plugins folder (Windows / macOS)
-tools/check_step_build123d.py  print a STEP tree with build123d (optional)
-tools/requirements.txt      pip requirements of the optional tool
 environment.yml             conda env of the optional tool
 ```
 
