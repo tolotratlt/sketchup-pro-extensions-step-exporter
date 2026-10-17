@@ -46,11 +46,35 @@ part (no nested group/component) →  solid (exact B-rep, not a mesh), named aft
 
 ## Requirements
 
-- **SketchUp Pro 2024 or later on Windows** (tested with SketchUp 2026). SketchUp ships its own Ruby; nothing else to install.
-- **FreeCAD 1.0 or later** (tested with 1.1.3). Only `freecadcmd.exe` (the headless FreeCAD) is used: it runs the bundled `import_sketchup.py` with FreeCAD's own Python. **No separate Python install and no FreeCAD add-on are needed.**
-  The extension looks for `FreeCAD*\bin\freecadcmd.exe` in `Program Files` and `%LOCALAPPDATA%\Programs`; otherwise set it with *Chemin de FreeCADCmd...*.
+### To use the extension (required)
 
-The CSV cut list and the buffet generator work without FreeCAD.
+| Software | Version | Provides | Notes |
+|---|---|---|---|
+| **SketchUp Pro** (Windows) | 2024 or later — tested 2026 (26.2) | **Ruby runtime** (bundled, Ruby 3.2 in SketchUp 2026) | Runs the extension (`.rb` files). Only Ruby standard library is used (`json`, `csv`, `open3`). |
+| **FreeCAD** (Windows) | 1.0 or later — tested 1.1.3 | **Python runtime** (bundled, Python 3.11 in FreeCAD 1.1) and the OpenCASCADE STEP writer | Only `freecadcmd.exe` (headless FreeCAD) is used: it runs `import_sketchup.py` with FreeCAD's own Python. |
+
+That's all. **No separate Ruby, Python or conda install, no gems, no pip packages and no FreeCAD add-on are needed** — both runtimes ship inside SketchUp and FreeCAD.
+
+The extension looks for `FreeCAD*\bin\freecadcmd.exe` in `Program Files` and `%LOCALAPPDATA%\Programs`; otherwise set it with *Chemin de FreeCADCmd...*. The CSV cut list and the buffet generator work without FreeCAD.
+
+### Optional — checking the STEP with build123d
+
+`tools/check_step_build123d.py` is a standalone helper, not part of the extension. It needs a regular Python with build123d:
+
+| Package | Version tested |
+|---|---|
+| Python | 3.12 |
+| build123d | 0.13.0 (pulls OCP / OpenCASCADE `cadquery-ocp-novtk` 8.0.1) |
+
+With conda:
+```powershell
+conda env create -f environment.yml     # creates the "sketchup-step" env
+conda activate sketchup-step
+```
+or with pip in any Python 3.10+ environment:
+```powershell
+pip install -r tools/requirements.txt
+```
 
 ## Installation
 
@@ -99,7 +123,7 @@ The hierarchy and names are preserved, but note that build123d's `import_step` i
 
 To print the tree as build123d sees it:
 ```powershell
-python tools\check_step_build123d.py model.step     # needs: pip install build123d
+python tools\check_step_build123d.py model.step     # see "Optional — checking the STEP with build123d"
 ```
 
 ## Limitations
@@ -117,7 +141,9 @@ src/meubles/export_freecad.rb  SketchUp → JSON (hierarchy + faces), runs freec
 src/meubles/import_sketchup.py JSON → STEP, executed by FreeCAD's Python
 src/meubles/nomenclature.rb CSV cut list
 src/meubles/buffet.rb       parametric buffet generator
-tools/check_step_build123d.py  print a STEP tree with build123d
+tools/check_step_build123d.py  print a STEP tree with build123d (optional)
+tools/requirements.txt      pip requirements of the optional tool
+environment.yml             conda env of the optional tool
 ```
 
 ## License

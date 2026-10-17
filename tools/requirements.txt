@@ -1,0 +1,2 @@
+# OPTIONAL — for check_step_build123d.py only (tested with Python 3.12).
+build123d>=0.13,<0.14

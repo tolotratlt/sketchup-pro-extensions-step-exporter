@@ -1,0 +1,14 @@
+# OPTIONAL — only for tools/check_step_build123d.py (reading the exported STEP with build123d).
+# The SketchUp extension itself does not need conda or any Python install.
+#
+#   conda env create -f environment.yml
+#   conda activate sketchup-step
+#   python tools/check_step_build123d.py model.step
+name: sketchup-step
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pip
+  - pip:
+      - -r tools/requirements.txt
