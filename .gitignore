@@ -1,0 +1,14 @@
+# Build output (attach the .rbz to a GitHub Release instead)
+dist/
+
+# Python
+__pycache__/
+*.pyc
+
+# Export results
+*.step
+*.stp
+*.json
+*.csv
+*.FCStd
+*.FCBak
