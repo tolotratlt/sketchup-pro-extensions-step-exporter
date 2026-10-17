@@ -1,8 +1,9 @@
-# Export de la hiérarchie SketchUp vers un JSON lu par freecad/import_sketchup.py.
+# Export STEP : SketchUp -> JSON (hiérarchie + géométrie) -> import_sketchup.py exécuté par FreeCADCmd.
 #
+# Objectif : la hiérarchie et les noms, rien d'autre (pas de matériaux, textures ni tags).
 # Rien n'est renommé ni aplati :
 #  - chaque groupe / instance devient un nœud (nom d'instance, nom de définition,
-#    matrice locale, tag, matériau) avec ses enfants ;
+#    matrice locale) avec ses enfants ;
 #  - la géométrie (faces planes, boucles extérieures et trous) est stockée une seule
 #    fois par définition, dans le repère local de la définition.
 # Unités : mm.
@@ -41,14 +42,13 @@ module Meubles
 
     def self.export(roots, path, model: Sketchup.active_model)
       definitions = {}
-      materials = {}
-      nodes = Array(roots).to_a.select { |e| instance?(e) }.map { |e| node(e, definitions, materials) }
+      nodes = Array(roots).to_a.select { |e| instance?(e) }.map { |e| node(e, definitions) }
       raise ArgumentError, 'Aucun groupe ni composant à exporter' if nodes.empty?
 
       data = {
         format: FORMAT, version: 1, units: 'mm',
         source: { file: model.path, title: model.title, sketchup: Sketchup.version },
-        materials: materials, definitions: definitions, roots: nodes
+        definitions: definitions, roots: nodes
       }
       File.write(path, JSON.pretty_generate(data), mode: 'w:UTF-8')
       { path: path, nodes: count(nodes), definitions: definitions.size }
@@ -58,22 +58,16 @@ module Meubles
       e.is_a?(Sketchup::Group) || e.is_a?(Sketchup::ComponentInstance)
     end
 
-    def self.node(e, definitions, materials)
+    def self.node(e, definitions)
       d = e.definition
-      key = d.name
-      definitions[key] ||= { group: d.group?, description: d.description, faces: faces(d) }
-      n = {
+      definitions[d.name] ||= { faces: faces(d) }
+      {
         name: e.name.to_s.empty? ? d.name : e.name,
         kind: e.is_a?(Sketchup::Group) ? 'group' : 'component',
-        definition: key,
+        definition: d.name,
         matrix: matrix(e.transformation),
-        layer: e.layer ? e.layer.name : nil,
-        material: register_material(e.material, materials),
-        attributes: attributes(d),
-        children: d.entities.select { |c| instance?(c) }.map { |c| node(c, definitions, materials) }
+        children: d.entities.select { |c| instance?(c) }.map { |c| node(c, definitions) }
       }
-      n.delete(:attributes) if n[:attributes].empty?
-      n
     end
 
     # Matrice 4x4 en lignes (convention FreeCAD), translation en mm.
@@ -89,26 +83,12 @@ module Meubles
         h = { outer: loop_points(f.outer_loop) }
         inner = f.loops.reject(&:outer?).map { |l| loop_points(l) }
         h[:inner] = inner unless inner.empty?
-        h[:material] = f.material.display_name if f.material
         h
       end
     end
 
     def self.loop_points(loop)
       loop.vertices.map { |v| v.position.to_a.map { |c| (c * MM_PER_INCH).round(6) } }
-    end
-
-    def self.register_material(material, materials)
-      return nil unless material
-      name = material.display_name
-      c = material.color
-      materials[name] ||= { rgb: [c.red, c.green, c.blue], alpha: material.alpha.round(3) }
-      name
-    end
-
-    def self.attributes(definition)
-      dict = definition.attribute_dictionary('meuble')
-      dict ? dict.to_h : {}
     end
 
     def self.count(nodes)

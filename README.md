@@ -1,19 +1,33 @@
 # Meubles — SketchUp Pro extension
 
-Export a SketchUp model to **STEP** while keeping its **hierarchy and names exactly as in the Outliner** — nothing is renamed, flattened or exploded. Also includes a CSV cut list exporter and a parametric buffet (sideboard) generator.
+**STEP export for SketchUp Pro that preserves the model hierarchy and object names.**
+
+SketchUp has no STEP exporter, and its other formats (OBJ, STL, DAE, FBX, IFC…) either flatten the model, turn it into meshes, or rename objects. This extension exports exact solids to STEP with the **hierarchy and names exactly as in the Outliner** — nothing is renamed, flattened or exploded.
 
 Built for a SketchUp → STEP → [build123d](https://github.com/gumyr/build123d) workflow, with FreeCAD used as the converter and viewer.
 
+### Scope
+
+- ✅ **In scope:** geometry (exact B-rep solids), hierarchy (groups / components / nesting), object names, placements.
+- ❌ **Out of scope, by design:** materials, textures, colours, tags/layers. They are not exported.
+
 ## Features
 
-All commands are in **Extensions > Meubles** (menu labels are in French):
+All commands are in **Extensions > Meubles** (menu labels are in French).
+
+**Main feature**
 
 | Menu item | What it does |
 |---|---|
-| *Exporter en STEP (via FreeCAD)...* | Exports the selection (or the whole model if nothing is selected) to a `.step` file. |
-| *Exporter la nomenclature (CSV)...* | Cut list: one row per identical part (definition + material), with L × W × thickness in mm, quantity, area, parent assemblies and instance names. `;`-separated, UTF-8 with BOM (opens directly in Excel). |
-| *Nouveau buffet...* / *Modifier le buffet sélectionné...* | Parametric sideboard: width, depth, height, number of compartments (= doors), shelves per compartment, panel thicknesses. Parts are components named `Type LxWxT` and are regenerated when parameters change, so the cut list always stays correct. |
+| *Exporter en STEP (via FreeCAD)...* | Exports the selection (or the whole model if nothing is selected) to a `.step` file, keeping hierarchy and names. |
 | *Chemin de FreeCADCmd...* | Sets the path to `freecadcmd.exe` if it isn't found automatically. |
+
+**Secondary tools**
+
+| Menu item | What it does |
+|---|---|
+| *Exporter la nomenclature (CSV)...* | Cut list: one row per identical part (same definition and material), with L × W × thickness in mm, quantity, area, parent assemblies and instance names. `;`-separated, UTF-8 with BOM (opens directly in Excel). |
+| *Nouveau buffet...* / *Modifier le buffet sélectionné...* | Parametric sideboard: width, depth, height, number of compartments (= doors), shelves per compartment, panel thicknesses. Parts are components named `Type LxWxT` and are regenerated when parameters change. |
 
 ### How the STEP export maps the model
 
@@ -91,7 +105,6 @@ python tools\check_step_build123d.py model.step     # needs: pip install build12
 ## Limitations
 
 - In the STEP, identical parts don't share geometry: each part is its own product so that readers display the **instance** name. Definition names (e.g. `Côté 850x450x18`) are kept in the CSV cut list.
-- Materials and colours are not exported.
 - Scaled instances are exported without their scale (STEP placements are rigid).
 - Windows only (path detection and `freecadcmd.exe`).
 
