@@ -102,6 +102,16 @@ The Extension Manager shows the extension as **Unsigned**: this is expected for 
 2. **Extensions > Meubles > Exporter en STEP (via FreeCAD)...** and choose the output file.
 3. A few seconds later a message confirms the export. A temporary `.json` next to the `.step` is deleted automatically.
 
+### Planarity check
+
+OpenCascade (FreeCAD's kernel) only builds faces that are planar to about 1e-7 mm, while SketchUp treats points closer than 0.001" (0.0254 mm) as identical. Imported models (manufacturer hardware, DWG/3DS conversions) often contain faces that are a few µm out of plane.
+
+- Each face is first built **as is**.
+- If that fails and the face is out of plane by **≤ 0.01 mm**, it is projected onto its mean plane and the export reports it (`NOTE « definition » : N face(s) … projected …`).
+- Beyond that, or for degenerate faces (fewer than 3 distinct vertices, zero area), **no STEP is written**. The error names the definition, the path of one instance, the face numbers and their deviation, so you can fix the model in SketchUp.
+
+The tolerance can be changed with the environment variable `SU_PLANAR_TOL` (mm, read by FreeCADCmd; `0` = strict, every non-planar face is an error).
+
 ## Viewing / reading the STEP
 
 ### FreeCAD
@@ -116,7 +126,8 @@ FreeCAD's STEP importer adds things that are **not in the file**: with default s
 
 ## Limitations
 
-- In the STEP, identical parts don't share geometry: each part is its own product so that readers display the **instance** name. Definition names (e.g. `Côté 850x450x18`) are kept in the CSV cut list.
+- STEP readers display the **product** name, so the exporter names products after instances. Instances of one definition share a single product (geometry written once, as in the `.skp`) only when they also share the same name; differently named instances each get their own copy. Definition names (e.g. `Côté 850x450x18`) are kept in the CSV cut list.
+- Triangulated meshes (imported hardware, scanned or converted models) stay triangulated: each triangle becomes an exact planar B-rep face (~1 KB of STEP). A 12,000-triangle model gives a ~12 MB STEP. Open meshes are exported as shells, not solids.
 - Scaled instances are exported without their scale (STEP placements are rigid).
 - macOS support is implemented (FreeCAD detection, path dialog, `install.sh` / `build_rbz.sh`) but has only been tested on Windows so far.
 

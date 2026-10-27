@@ -27,9 +27,13 @@ module Meubles
       export(roots, json, model: model)
       output, status = Open3.capture2e({ 'SU_JSON' => json, 'SU_STEP' => step }, exe, SCRIPT)
       output = output.force_encoding(Encoding::UTF_8).scrub
-      raise "FreeCAD a échoué :\n#{output.lines.last(15).join}" unless status.success? && File.exist?(step)
+      unless status.success? && File.exist?(step)
+        errors = output.lines.grep(/^ERREUR /).uniq.map { |l| l.sub(/^ERREUR /, '') }
+        raise errors.join unless errors.empty?
+        raise "FreeCAD a échoué :\n#{output.lines.last(15).join}"
+      end
       File.delete(json) unless keep_json
-      { step: step, warnings: output.lines.grep(/ATTENTION/).map(&:strip) }
+      { step: step, warnings: output.lines.grep(/^(ATTENTION|NOTE)/).map(&:strip).uniq }
     end
 
     def self.mac?
